@@ -11,6 +11,10 @@ module.exports = defineConfig({
     Dice_password:"",
     chromeWebSecurity: false,
     
+      env: {
+        categories: ["ML"], // Specify categories you want to process
+        desktopPath: "/Users/yourusername/Desktop" // Adjust the path as needed
+      },
     setupNodeEvents(on, config) {
       // Load plugins file for custom tasks
       require('./cypress/plugins/index')(on, config);

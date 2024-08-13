@@ -12,8 +12,8 @@ module.exports = defineConfig({
     chromeWebSecurity: false,
     
       env: {
-        categories: ["ML"], // Specify categories you want to process
-        desktopPath: "/Users/yourusername/Desktop" // Adjust the path as needed
+        categories: ["QA"], // Specify categories you want to process
+        desktopPath: "/Users/Desktop" // Adjust the path as needed
       },
     setupNodeEvents(on, config) {
       // Load plugins file for custom tasks

@@ -1,6 +1,6 @@
 const fs = require('fs');
 const path = require('path');
-const { getFilesFromDirectory } = require('./getFiles');
+
 
 // Function to append message to a file
 const appendToFile = (filePath, message) => {
@@ -82,6 +82,7 @@ module.exports = (on, config) => {
     writeJsonFile({ filePath, data }) {
       try {
         const jsonData = JSON.stringify(data, null, 2);
+        console.log(`Writing JSON to: ${filePath}`);
         fs.writeFileSync(filePath, jsonData, 'utf8');
         console.log('JSON file written successfully');
         return null;
@@ -90,6 +91,7 @@ module.exports = (on, config) => {
         return err.message;
       }
     },
+    
     logInfo(message) {
       const logPath = path.join(__dirname, '..', 'cypress', 'logs', 'info.log');
       ensureDirectoryExistence(logPath);
@@ -116,9 +118,6 @@ module.exports = (on, config) => {
     },
     writeCSV({ filePath, data, headers, append }) {
       return writeCSV(filePath, data, headers, append);
-    },
-    getFilesFromDirectory(directory) {
-      return getFilesFromDirectory(directory);
     },
     deleteFile(filePath) {
       return new Promise((resolve, reject) => {

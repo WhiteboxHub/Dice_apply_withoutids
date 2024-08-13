@@ -7,14 +7,31 @@ module.exports = defineConfig({
     includeShadowDom: true,
     pageLoadTimeout: 100000,
     defaultCommandTimeout: 10000,
-    Dice_username:"",
-    Dice_password:"",
     chromeWebSecurity: false,
     
       env: {
         categories: ["QA"], // Specify categories you want to process
-        desktopPath: "/Users/Desktop" // Adjust the path as needed
-      },
+        desktopPath: "/Users/Desktop" ,
+        credentials: {
+          "you": {
+            username: "you@example.com",
+            password: "your_password",
+            apply: "s"
+          },
+          "ha": {
+            username: "ha@example.com",
+            password: "your_password",
+            apply: "n"
+          },
+          "dee": {
+            username: "de@example.com",
+            password: "your_password",
+            apply: "n"
+          }
+        },
+        defaultUserKey: "you" // Add this line
+      },// Adjust the path as needed
+      
     setupNodeEvents(on, config) {
       // Load plugins file for custom tasks
       require('./cypress/plugins/index')(on, config);

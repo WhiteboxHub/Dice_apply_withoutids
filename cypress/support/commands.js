@@ -24,25 +24,36 @@
 // -- This will overwrite an existing command --
 // Cypress.Commands.overwrite('visit', (originalFn, url, options) => { ... })
 Cypress.Commands.add('loginDice', () => {
-    const username = Cypress.config("Dice_username");
-    
-    const password = Cypress.config("Dice_password");
+  // Access credentials from Cypress environment
+  const credentials = Cypress.env('credentials');
+  const userKey = Cypress.env('defaultUserKey');
+  const user = credentials[userKey];
 
+  if (!user) {
+    throw new Error(`No credentials found for user key: ${userKey}`);
+  }
 
-    // Increase pageLoadTimeout for this specific visit\
+  const { username, password, apply } = user;
 
-    cy.visit('https://www.dice.com/dashboard/login');
-  
-    // Type username and password, then click submit button
-    cy.get('input[placeholder="Please enter your email"][type="email"][name="email"]').type(username);
-    cy.get('button[data-testid="sign-in-button"]').click().wait(2000);
-    cy.get('input[placeholder="Enter Password"]').type(password);
-    cy.get('button[data-testid="submit-password"]').click();
-    cy.wait(5000);
-    
-  
-    // Optionally, add assertions or further actions after login
+  if (apply !== 's') {
+    // If apply is not 's', skip the application process
+    cy.log(`Skipping application for ${userKey}`);
+    return;
+  }
+
+  // Increase pageLoadTimeout for this specific visit
+  cy.visit('https://www.dice.com/dashboard/login');
+
+  // Type username and password, then click submit button
+  cy.get('input[placeholder="Please enter your email"][type="email"][name="email"]').type(username);
+  cy.get('button[data-testid="sign-in-button"]').click().wait(2000);
+  cy.get('input[placeholder="Enter Password"]').type(password);
+  cy.get('button[data-testid="submit-password"]').click();
+  cy.wait(5000);
+
+  // Optionally, add assertions or further actions after login
 });
+
 
 
 const path = require('path');

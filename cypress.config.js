@@ -1,4 +1,6 @@
 const { defineConfig } = require("cypress");
+const fs = require('fs'); 
+const path = require('path');
 
 module.exports = defineConfig({
   e2e: {
@@ -10,12 +12,12 @@ module.exports = defineConfig({
     chromeWebSecurity: false,
     
       env: {
-        categories: ["QA"], // Specify categories you want to process
-        desktopPath: "/Users/Desktop" ,
+        categories: 'QA', // Specify categories you want to process
+        
         credentials: {
           "you": {
-            username: "you@example.com",
-            password: "your_password",
+            username: "na@gmail.com",
+            password: "Innov1",
             apply: "s"
           },
           "ha": {
@@ -32,12 +34,22 @@ module.exports = defineConfig({
         defaultUserKey: "you" // Add this line
       },// Adjust the path as needed
       
-    setupNodeEvents(on, config) {
-      // Load plugins file for custom tasks
-      require('./cypress/plugins/index')(on, config);
-      // Return the updated config
-      return config;
-    }
+      setupNodeEvents(on, config) {
+        // Ensure the backup directory exists
+        // const backupDir = path.join(__dirname,'backup', 'cypress-fixtures');
+        // if (!fs.existsSync(backupDir)) {
+        //   fs.mkdirSync(backupDir, { recursive: true });
+        // }
+  
+        // // Set the fixturesFolder dynamically
+        // config.fixturesFolder = backupDir;
+  
+        // Load plugins file for custom tasks
+        require('./cypress/plugins/index')(on, config);
+  
+        // Return the updated config
+        return config;
+      }
   },
   // implement node event listeners here
 });

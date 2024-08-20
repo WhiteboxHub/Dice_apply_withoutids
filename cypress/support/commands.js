@@ -56,6 +56,18 @@ Cypress.Commands.add('loginDice', () => {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
 const path = require('path');
 Cypress.Commands.add('applyForJob', ({ jobId, timestamp }) => {
   cy.visit(`https://www.dice.com/job-detail/${jobId}`, { failOnStatusCode: false, timeout: 35000 })

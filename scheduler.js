@@ -14,14 +14,14 @@ function sendEmail(appliedCount) {
     let transporter = nodemailer.createTransport({
         service: 'Gmail',
         auth: {
-            user: 'om',
-            pass: ''
+             user: 'mail.com',
+            pass: 'I1',
         }
     });
 
     let mailOptions = {
-        from: 'dcom',
-          to: '@example.com',
+        from: 'com',
+          to: 'smple.com',
         subject: 'Daily Job Application Summary',
         text: `You have successfully applied for ${appliedCount} jobs today.`
     };
@@ -33,10 +33,11 @@ function sendEmail(appliedCount) {
             console.log('Email sent:', info.response);
         }
     });
+
 }
 
 // Schedule the task to run at 12:24 PM from Monday to Friday
-cron.schedule('0 2 * * 1-5', () => {
+cron.schedule('2 4  * * 1-5', () => {
     console.log('Running Cypress tests...');
     try {
         runCypress();

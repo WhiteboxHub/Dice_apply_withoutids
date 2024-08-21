@@ -16,8 +16,8 @@ module.exports = defineConfig({
         
         credentials: {
           "you": {
-            username: "nazmun0029@gmail.com",
-            password: "Innovapath1",
+            username: "n@gmail.com",
+            password: "th1",
             apply: "s"
           },
           "ha": {

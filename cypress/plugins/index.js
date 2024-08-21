@@ -107,6 +107,11 @@ module.exports = (on, config) => {
     getHomeDir() {
       return os.homedir();
     },
+    saveAppliedCount(count) {
+      const filePath = path.join(__dirname, '..', '..', 'appliedCount.txt');
+      fs.writeFileSync(filePath, count.toString());
+      return null;
+  },
     logApplicationInfo(message) {
       const logPath = path.join(__dirname, '..', 'applylogs', 'info.log');
       ensureDirectoryExistence(logPath);
@@ -150,6 +155,7 @@ module.exports = (on, config) => {
     exitProcess() {
       process.exit(0);
     }
+    
   });
 
   return config;

@@ -66,27 +66,18 @@ Cypress.Commands.add('loginDice', () => {
 
 
 
-
-
 const path = require('path');
+
 Cypress.Commands.add('applyForJob', ({ jobId, timestamp }) => {
   cy.visit(`https://www.dice.com/job-detail/${jobId}`, { failOnStatusCode: false, timeout: 35000 })
     .then(() => {
       cy.get('body').then($body => {
         if ($body.text().includes('Sorry this job is no longer available. The Similar Jobs shown below might interest you.')) {
-          // Job is no longer available
+          // Job is no longer available, do not write this to CSV
           cy.task('logApplicationInfo', `${timestamp} - Sorry, this job is no longer available for job ID: ${jobId}`);
-          return cy.task('writeCSV', {
-            filePath: 'cypress/fixtures/applied/job_applications.csv',
-            data: { jobId, timestamp, status: 'no longer available' },
-            headers: ['jobId', 'timestamp', 'status'],
-            append: true
-          }).then(() => {
-            cy.log(`Moved to the next job ID after finding job ID ${jobId} as no longer available.`);
-          });
+          cy.log(`Job ID ${jobId} is no longer available. Skipping this job.`);
         } else {
           // Check if the "Application Submitted" message is present
-          // cy.get('.appViewed > .hydrated')
           cy.wait(15000);
           cy.get('.hydrated', { timeout: 15000 });
           cy.get('.hydrated').shadow().find('p').then($button => {
@@ -95,7 +86,7 @@ Cypress.Commands.add('applyForJob', ({ jobId, timestamp }) => {
               if (buttonText.includes('Application Submitted')) {
                 // Application already submitted
                 cy.task('logApplicationInfo', `${timestamp} - Application already submitted for job ID: ${jobId}`);
-                return cy.task('writeCSV', {
+                cy.task('writeCSV', {
                   filePath: 'cypress/fixtures/applied/job_applications.csv',
                   data: { jobId, timestamp, status: 'already applied' },
                   headers: ['jobId', 'timestamp', 'status'],

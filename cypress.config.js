@@ -16,9 +16,9 @@ module.exports = defineConfig({
         
         credentials: {
           "you": {
-            username: "na@gmail.com",
-            password: "Innov1",
-            apply: "n"
+            username: "nazmun0029@gmail.com",
+            password: "Innovapath1",
+            apply: "s"
           },
           "ha": {
             username: "ha@example.com",
@@ -31,7 +31,7 @@ module.exports = defineConfig({
             apply: "s"
           }
         },
-        defaultUserKey: "dee" // Add this line
+        defaultUserKey: "you" // Add this line
       },// Adjust the path as needed
       
       setupNodeEvents(on, config) {

@@ -1,6 +1,6 @@
 const fs = require('fs');
 const path = require('path');
-
+const os = require('os');
 // Function to append a message to a file
 const appendToFile = (filePath, message) => {
   try {
@@ -20,38 +20,41 @@ function ensureDirectoryExistence(filePath) {
   }
 }
 
-// Function to convert JSON to CSV format
 function convertToCSV(data, headers) {
   const csvRows = [];
-  csvRows.push(headers.join(','));
 
   data.forEach(row => {
     const values = headers.map(header => {
-      const escaped = ('' + row[header]).replace(/"/g, '\\"');
-      return `"${escaped}"`;
+      const escaped = ('' + row[header]).replace(/"/g, '\\"'); // Escape double quotes
+      return `"${escaped}"`; // Wrap values in double quotes
     });
-    csvRows.push(values.join(','));
+    csvRows.push(values.join(',')); // Add data row
   });
 
-  return csvRows.join('\n');
+  return csvRows.join('\n'); // Combine all rows with newline characters
 }
 
-// Function to write a CSV file
+// Function to write CSV file
 function writeCSV(filePath, data, headers, append = true) {
   try {
+    // Ensure data is always an array
     const dataArray = Array.isArray(data) ? data : [data];
-    const csv = convertToCSV(dataArray, headers);
+    const csv = convertToCSV(dataArray, headers); // Convert data to CSV format
 
+    // Determine write mode
     const options = { flag: append ? 'a' : 'w' };
+
+    // Check if the file exists and is empty or new
     const fileExists = fs.existsSync(filePath);
     const isEmpty = fileExists ? fs.readFileSync(filePath, 'utf8').trim().length === 0 : true;
 
+    // Write header if the file is new or empty
     if (!fileExists || isEmpty) {
       fs.writeFileSync(filePath, headers.join(',') + '\n', { flag: 'w' });
     }
 
     fs.writeFileSync(filePath, csv + '\n', options);
-   // console.log('CSV file written successfully');
+    console.log('CSV file written successfully');
     return true;
   } catch (err) {
     console.error('Error writing CSV file', err);

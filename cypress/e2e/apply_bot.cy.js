@@ -2,12 +2,35 @@ import { format } from 'date-fns';
 const os = require('os');
 const path = require('path');
 
-// Define the directory path
-const categorie = Cypress.env('categories');
-const homeDir = os.homedir();
-const qaDirPath = path.join(homeDir, 'users','innovapathinc', 'Desktop', 'backup', 'cypress-fixtures', categorie);
-
 describe('Apply for Jobs', () => {
+    let homeDir;
+    let qaDirPath;
+
+    before(() => {
+        // Fetch and validate the home directory
+        cy.task('getHomeDir').then((dir) => {
+            homeDir = dir;
+            cy.log('Home Directory:', homeDir);
+
+            // Determine the user directory name based on the platform
+            let userDir;
+            if (Cypress.platform === 'win32') {
+                // Windows
+                userDir = 'Users';
+            } else {
+                // macOS/Linux
+                userDir = ''; // No additional directory needed for macOS/Linux
+            }
+
+            // Construct the QA directory path
+            const categorie = Cypress.env('categories') || 'default-category';
+            qaDirPath = path.join(homeDir, userDir, 'Desktop', 'backup', 'cypress-fixtures', categorie);
+
+            // Log the directory path
+            cy.log(`QA Directory Path: ${qaDirPath}`);
+        });
+    });
+
     // Use an object to store job IDs by file name
     let jobsByFile = {};
 
@@ -17,18 +40,20 @@ describe('Apply for Jobs', () => {
             cy.loginDice(); // Custom command to log in
         });
 
-        // Log the directory path
-        console.log(`${categorie} Directory Path: ${qaDirPath}`);
-
         // Get the list of files from the QA directory
         cy.task('listFilesInDir', qaDirPath).then((files) => {
             // Process each file in the directory
             files.forEach((file) => {
                 const filePath = path.join(qaDirPath, file);
                 cy.task('readJsonFile', filePath).then((data) => {
-                    // Store job IDs by file name
-                    jobsByFile[file] = data.ids || [];
+                    if (data && data.ids) {
+                        jobsByFile[file] = data.ids;
+                    } else {
+                        cy.log(`No 'ids' property found in file: ${file}`);
+                        jobsByFile[file] = [];
+                    }
                 });
+                
             });
         });
     });

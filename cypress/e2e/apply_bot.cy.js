@@ -5,7 +5,7 @@ const path = require('path');
 // Define the directory path
 const categorie = Cypress.env('categories');
 const homeDir = os.homedir();
-const qaDirPath = path.join(homeDir, 'users', 'innovapathinc', 'Desktop', 'backup', 'cypress-fixtures', categorie);
+const qaDirPath = path.join(homeDir, 'users','innovapathinc', 'Desktop', 'backup', 'cypress-fixtures', categorie);
 
 describe('Apply for Jobs', () => {
     // Use an object to store job IDs by file name
@@ -18,7 +18,7 @@ describe('Apply for Jobs', () => {
         });
 
         // Log the directory path
-        console.log(`QA Directory Path: ${qaDirPath}`);
+        console.log(`${categorie} Directory Path: ${qaDirPath}`);
 
         // Get the list of files from the QA directory
         cy.task('listFilesInDir', qaDirPath).then((files) => {

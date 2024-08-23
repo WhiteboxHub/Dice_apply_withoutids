@@ -3,28 +3,34 @@ const os = require('os');
 const path = require('path');
 
 describe('Apply for Jobs', () => {
+  
+
     let homeDir;
     let qaDirPath;
     let appliedCount = 0; // Variable to track applied jobs
-
+    
     before(() => {
+        // Get the home directory using a Cypress task
         cy.task('getHomeDir').then((dir) => {
             homeDir = dir;
             cy.log('Home Directory:', homeDir);
-
-            let userDir;
+    
+            // Determine the correct user directory and construct the full path to the QA directory
+            const category = Cypress.env('categories') || 'default-category';
+    
             if (Cypress.platform === 'win32') {
-                userDir = 'Users';
+                // For Windows, handle path by appending `Desktop` and other directories properly
+                const userProfile = Cypress.env('USERPROFILE') || path.basename(homeDir);
+                qaDirPath = path.join(homeDir, 'Desktop', 'jobs_to_apply',  category);
             } else {
-                userDir = ''; 
+                // For macOS/Linux, simply append `Desktop` and other directories
+                qaDirPath = path.join(homeDir, 'Desktop', 'jobs_to_apply', category);
             }
-
-            const categorie = Cypress.env('categories') || 'default-category';
-            qaDirPath = path.join(homeDir, userDir, 'Desktop', 'backup', 'cypress-fixtures', categorie);
-
-            cy.log(`QA Directory Path: ${qaDirPath}`);
+    
+            cy.log(`${category} Directory Path: ${qaDirPath}`);
         });
     });
+    
 
     let jobsByFile = {};
 

@@ -16,8 +16,8 @@ module.exports = defineConfig({
         
         credentials: {
           "you": {
-            username: "n@gmail.com",
-            password: "th1",
+            username: "",
+            password: "I",
             apply: "s"
           },
           "ha": {

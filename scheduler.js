@@ -10,22 +10,24 @@ function runCypress() {
 }
 
 // Function to send email
-function sendEmail(appliedCount) {
+function sendEmail(appliedCounts) {
     let transporter = nodemailer.createTransport({
         service: 'gmail',
         auth: {
-             user: 'diccom',
-            pass: 'I',
+            user: 'dil.com',
+            pass: 'ovaath1',
+        },
+        tls: {
+            rejectUnauthorized: false
         }
     });
 
     let mailOptions = {
-        from: 'om',
-          to: 's',
+        from: '1@gmail.com',
+        to: 'shixample.com',
         subject: 'Daily Job Application Summary',
-        text: `You have successfully applied for ${appliedCount} jobs today.`
+        text: `Summary:\nApplied: ${appliedCounts.applied}\nAlready Applied: ${appliedCounts.alreadyApplied}\nNo Longer Available: ${appliedCounts.noLongerAvailable}\nFailed: ${appliedCounts.failed}`
     };
-
 
     transporter.sendMail(mailOptions, function (error, info) {
         if (error) {
@@ -34,11 +36,11 @@ function sendEmail(appliedCount) {
             console.log('Email sent:', info.response);
         }
     });
-
 }
 
+
 // Schedule the task to run at 12:24 PM from Monday to Friday
-cron.schedule('58 9 * * 1-5', () => {
+cron.schedule('27 16 * * 1-5', () => {
     console.log('Running Cypress tests...');
     try {
         runCypress();

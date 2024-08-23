@@ -1,6 +1,13 @@
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
+let statusCounts = {
+  applied: 0,
+  alreadyApplied: 0,
+  noLongerAvailable: 0,
+  fail: 0,
+  skipped: 0
+};
 // Function to append a message to a file
 const appendToFile = (filePath, message) => {
   try {
@@ -68,6 +75,20 @@ module.exports = (on, config) => {
       if (!fs.existsSync(dirname)) {
         fs.mkdirSync(dirname, { recursive: true });
       }
+      return null;
+    },
+    incrementStatusCount(status) {
+      if (statusCounts.hasOwnProperty(status)) {
+        statusCounts[status]++;
+      }
+      return null;
+    },
+    getStatusCounts() {
+      return statusCounts;
+    },
+    writeStatusCountsToFile() {
+      const countsFilePath = path.join(__dirname, '../statusCounts.json');
+      fs.writeFileSync(countsFilePath, JSON.stringify(statusCounts, null, 2));
       return null;
     },
     listFilesInDir(dir) {
@@ -160,3 +181,4 @@ module.exports = (on, config) => {
 
   return config;
 };
+

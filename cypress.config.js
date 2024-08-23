@@ -15,9 +15,9 @@ module.exports = defineConfig({
         categories: 'QA', // Specify categories you want to process
         
         credentials: {
-          "you": {
-            username: "",
-            password: "I",
+     "you": {
+            username: "l.com",
+            password: "Innovapath1",
             apply: "s"
           },
           "ha": {

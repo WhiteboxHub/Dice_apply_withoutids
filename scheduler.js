@@ -12,7 +12,7 @@ function runCypress() {
 // Function to send email
 function sendEmail(appliedCount) {
     let transporter = nodemailer.createTransport({
-        service: 'Gmail',
+        service: 'gmail',
         auth: {
              user: 'diccom',
             pass: 'I',
@@ -34,6 +34,7 @@ function sendEmail(appliedCount) {
             console.log('Email sent:', info.response);
         }
     });
+
 }
 
 // Schedule the task to run at 12:24 PM from Monday to Friday

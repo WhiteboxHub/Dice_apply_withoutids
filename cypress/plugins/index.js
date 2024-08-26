@@ -86,11 +86,19 @@ module.exports = (on, config) => {
     getStatusCounts() {
       return statusCounts;
     },
-    writeStatusCountsToFile() {
-      const countsFilePath = path.join(__dirname, '../statusCounts.json');
-      fs.writeFileSync(countsFilePath, JSON.stringify(statusCounts, null, 2));
+    writeAppliedCounts({ applied, alreadyApplied, noLongerAvailable, failed }) {
+      const counts = {
+        applied,
+        alreadyApplied,
+        noLongerAvailable,
+        failed
+      };
+
+      const filePath = path.resolve('appliedCount.txt');
+      fs.writeFileSync(filePath, JSON.stringify(counts, null, 2));
       return null;
     },
+  
     listFilesInDir(dir) {
       return new Promise((resolve, reject) => {
         fs.readdir(dir, (err, files) => {
@@ -128,11 +136,7 @@ module.exports = (on, config) => {
     getHomeDir() {
       return os.homedir();
     },
-    saveAppliedCount(count) {
-      const filePath = path.join(__dirname, '..', '..', 'appliedCount.txt');
-      fs.writeFileSync(filePath, count.toString());
-      return null;
-  },
+ 
     logApplicationInfo(message) {
       const logPath = path.join(__dirname, '..', 'applylogs', 'info.log');
       ensureDirectoryExistence(logPath);

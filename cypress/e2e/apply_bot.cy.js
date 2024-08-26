@@ -79,7 +79,7 @@ describe('Apply for Jobs', () => {
         });
     });
     after(() => {
-        cy.task('writeStatusCountsToFile');
+        cy.task('writeAppliedCounts');
     });
     
 });

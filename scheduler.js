@@ -3,6 +3,7 @@ const { execSync } = require('child_process');
 const nodemailer = require('nodemailer');
 const fs = require('fs');
 const path = require('path');
+require('dotenv').config();  // Load environment variables from .env file
 
 // Function to run Cypress tests
 function runCypress() {
@@ -12,10 +13,10 @@ function runCypress() {
 // Function to send email
 function sendEmail(appliedCounts) {
     let transporter = nodemailer.createTransport({
-        service: 'gmail',
+        service: process.env.EMAIL_SERVICE,
         auth: {
-            user: 'dil.com',
-            pass: 'ovaath1',
+            user: process.env.EMAIL_USER,
+            pass: process.env.EMAIL_PASS,
         },
         tls: {
             rejectUnauthorized: false
@@ -23,8 +24,8 @@ function sendEmail(appliedCounts) {
     });
 
     let mailOptions = {
-        from: '1@gmail.com',
-        to: 'shixample.com',
+        from: process.env.EMAIL_FROM,
+        to: process.env.EMAIL_TO,
         subject: 'Daily Job Application Summary',
         text: `Summary:\nApplied: ${appliedCounts.applied}\nAlready Applied: ${appliedCounts.alreadyApplied}\nNo Longer Available: ${appliedCounts.noLongerAvailable}\nFailed: ${appliedCounts.failed}`
     };
@@ -38,9 +39,8 @@ function sendEmail(appliedCounts) {
     });
 }
 
-
 // Schedule the task to run at 12:24 PM from Monday to Friday
-cron.schedule('27 16 * * 1-5', () => {
+cron.schedule('01 19 * * 1-5', () => {
     console.log('Running Cypress tests...');
     try {
         runCypress();

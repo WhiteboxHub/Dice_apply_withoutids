@@ -1,85 +1,40 @@
+// If you are using format from 'date-fns', make sure to use it
 import { format } from 'date-fns';
-const os = require('os');
-const path = require('path');
 
 describe('Apply for Jobs', () => {
-  
-
-    let homeDir;
-    let qaDirPath;
-    let appliedCount = 0; // Variable to track applied jobs
-    
-    before(() => {
-        // Get the home directory using a Cypress task
-        cy.task('getHomeDir').then((dir) => {
-            homeDir = dir;
-            cy.log('Home Directory:', homeDir);
-    
-            // Determine the correct user directory and construct the full path to the QA directory
-            const category = Cypress.env('categories') || 'default-category';
-    
-    
-            // Determine the correct user directory and construct the full path to the QA directory
-           // const category = Cypress.env('categories') || 'default-category';
-    
-            if (Cypress.platform === 'win32') {
-                // For Windows, handle path by appending `Desktop` and other directories properly
-                const userProfile = Cypress.env('USERPROFILE') || path.basename(homeDir);
-                qaDirPath = path.join(homeDir, 'Desktop', 'jobs_to_apply',  category);
-            } else {
-                // For macOS/Linux, simply append `Desktop` and other directories
-                qaDirPath = path.join(homeDir, 'Desktop', 'jobs_to_apply', category);
-            }
-    
-            cy.log(`${category} Directory Path: ${qaDirPath}`);
-        });
-    });
-    
-
-    let jobsByFile = {};
-
+    let jobIds = [];
+    let accumulatedCounts = { // Define here to be used in after hook
+        applied: 0,
+        alreadyApplied: 0,
+        noLongerAvailable: 0,
+        failed: 0,
+        skipped: 0
+    };
     before(() => {
         // Ensure session management is correctly set up
         cy.session('login', () => {
-            cy.loginDice(); // Custom command to log in
+            cy.loginDice(); // Custom command to login
         });
 
-        // Get the list of files from the QA directory
-        cy.task('listFilesInDir', qaDirPath).then((files) => {
-            // Process each file in the directory
-            files.forEach((file) => {
-                const filePath = path.join(qaDirPath, file);
-                cy.task('readJsonFile', filePath).then((data) => {
-                    if (data && data.ids) {
-                        jobsByFile[file] = data.ids;
-                    } else {
-                        cy.log(`No 'ids' property found in file: ${file}`);
-                        jobsByFile[file] = [];
-                    }
-                });
-                
-            });
+        // Read the file specified in the environment variable
+        const filePath = Cypress.env('file');
+        cy.task('readJsonFile', filePath).then((data) => {
+            jobIds = data.ids; // Assuming JSON structure { "ids": [...] }
         });
     });
 
-    it('Applies for jobs using Easy Apply', () => {
-        // Iterate over each file and its job IDs
-        cy.wrap(Object.entries(jobsByFile)).each(([fileName, jobIds]) => {
-            cy.log(`Processing file: ${fileName}`);
-
-            // Apply for jobs using IDs from the current file
-            cy.wrap(jobIds).each((currentJobId) => {
-                const timestamp = new Date().toISOString().replace(/T/, ' ').replace(/\..+/, '');
-                const status = ' ';
-                cy.applyForJob({ jobId: currentJobId, timestamp, status }); // Custom Cypress command to apply for the job
-            }).then(() => {
-                // Reload the browser session after processing each file
-                cy.reload();
+    it('Applies for jobs using Easy Apply for each job ID in the file', () => {
+        cy.wrap(jobIds).each((currentJobId) => {
+            const timestamp = new Date().toISOString().replace(/T/, ' ').replace(/\..+/, '');
+            cy.applyForJob({ jobId: currentJobId, timestamp }).then((status) => {
+                accumulatedCounts[status]++;
             });
+        }).then(() => {
+            cy.reload();
         });
     });
+
     after(() => {
-        cy.task('writeAppliedCounts');
+        cy.writeAppliedCounts(); // Ensure this task is properly defined
     });
-    
 });

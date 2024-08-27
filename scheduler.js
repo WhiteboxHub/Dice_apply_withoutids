@@ -1,17 +1,110 @@
-const cron = require('node-cron');
-const { execSync } = require('child_process');
-const nodemailer = require('nodemailer');
-const fs = require('fs');
 const path = require('path');
-require('dotenv').config();  // Load environment variables from .env file
+const fs = require('fs');
+const os = require('os');
+const { exec } = require('child_process');
+const cron = require('node-cron');
+const nodemailer = require('nodemailer');
+require('dotenv').config(); // Load environment variables from .env file
+
+// Define paths and variables
+const homeDir = os.homedir();
+const category = process.env.CATEGORIES || 'default-category';
+const qaDirPath = path.join(homeDir, 'Desktop', 'jobs_to_apply', category);
+const appliedCountFilePath = path.join(__dirname, 'appliedCount.json');
+
+// Global object to accumulate counts across files
+let accumulatedCounts = {
+    applied: 0,
+    alreadyApplied: 0,
+    noLongerAvailable: 0,
+    failed: 0,
+    skipped: 0
+};
+
+// Load existing accumulated counts if available
+const loadExistingCounts = () => {
+    if (fs.existsSync(appliedCountFilePath)) {
+        try {
+            const appliedCountData = fs.readFileSync(appliedCountFilePath, 'utf8').trim();
+            const existingCounts = JSON.parse(appliedCountData);
+            accumulatedCounts = { ...accumulatedCounts, ...existingCounts };
+        } catch (error) {
+            console.error('Error reading or parsing applied counts file:', error);
+        }
+    }
+};
+
+// Function to save accumulated counts to a file
+const saveCounts = () => {
+    try {
+        fs.writeFileSync(appliedCountFilePath, JSON.stringify(accumulatedCounts, null, 2));
+    } catch (error) {
+        console.error('Error saving applied counts:', error);
+    }
+};
+
+// Function to get the list of files
+const getFiles = () => {
+    return new Promise((resolve, reject) => {
+        fs.readdir(qaDirPath, (err, files) => {
+            if (err) {
+                return reject(err);
+            }
+            resolve(files);
+        });
+    });
+};
 
 // Function to run Cypress tests
-function runCypress() {
-    execSync('npx cypress run', { stdio: 'inherit' });
-}
+const runCypress = (file) => {
+    return new Promise((resolve, reject) => {
+        const filePath = path.join(qaDirPath, file);
+        const command = `npx cypress run --env file="${filePath}"`;
+        console.log(`Executing command: ${command}`);
+
+        const cypressProcess = exec(command);
+
+        cypressProcess.stdout.on('data', (data) => {
+            console.log(`stdout: ${data}`);
+        });
+
+        cypressProcess.stderr.on('data', (data) => {
+            console.error(`stderr: ${data}`);
+        });
+
+        cypressProcess.on('close', (code) => {
+            if (code !== 0) {
+                return reject(new Error(`Cypress process exited with code ${code}`));
+            }
+            resolve();
+        });
+
+        cypressProcess.on('error', (err) => {
+            reject(err);
+        });
+    });
+};
+
+// Function to process all files in the directory
+const processFiles = async () => {
+    try {
+        const files = await getFiles();
+        console.log(`Files found: ${files}`);
+        for (const file of files) {
+            console.log(`Processing file: ${file}`);
+            await runCypress(file);
+
+            // Update and save counts after each file is processed
+            saveCounts();
+            console.log(`Finished processing file: ${file}`);
+        }
+    } catch (error) {
+        console.error('Error processing files:', error);
+    }
+};
 
 // Function to send email
-function sendEmail(appliedCounts) {
+const sendEmail = () => {
     let transporter = nodemailer.createTransport({
         service: process.env.EMAIL_SERVICE,
         auth: {
@@ -27,7 +120,7 @@ function sendEmail(appliedCounts) {
         from: process.env.EMAIL_FROM,
         to: process.env.EMAIL_TO,
         subject: 'Daily Job Application Summary',
-        text: `Summary:\nApplied: ${appliedCounts.applied}\nAlready Applied: ${appliedCounts.alreadyApplied}\nNo Longer Available: ${appliedCounts.noLongerAvailable}\nFailed: ${appliedCounts.failed}`
+        text: `Summary:\nApplied: ${accumulatedCounts.applied || 0}\nAlready Applied: ${accumulatedCounts.alreadyApplied || 0}\nNo Longer Available: ${accumulatedCounts.noLongerAvailable || 0}\nFailed: ${accumulatedCounts.failed || 0}\nSkipped: ${accumulatedCounts.skipped || 0}`
     };
 
     transporter.sendMail(mailOptions, function (error, info) {
@@ -37,19 +130,18 @@ function sendEmail(appliedCounts) {
             console.log('Email sent:', info.response);
         }
     });
-}
+};
 
-// Schedule the task to run at 12:24 PM from Monday to Friday
-cron.schedule('01 19 * * 1-5', () => {
+// Schedule the task to run at 3:39 PM from Monday to Friday
+cron.schedule('39 16 * * 1-5', async () => {
     console.log('Running Cypress tests...');
     try {
-        runCypress();
+        loadExistingCounts(); // Load existing counts before processing files
+        await processFiles();   // Process all files in the dynamically set directory
         console.log('Finished processing all files.');
 
-        // After running Cypress, read the applied count from a file
-        const appliedCountFilePath = path.join(__dirname, 'appliedCount.txt');
-        const appliedCount = fs.readFileSync(appliedCountFilePath, 'utf8');
-        sendEmail(appliedCount.trim());
+        // Send email with the summary
+        sendEmail();
 
     } catch (error) {
         console.error('Error during Cypress test execution:', error);

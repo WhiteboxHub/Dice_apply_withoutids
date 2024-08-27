@@ -55,105 +55,92 @@ Cypress.Commands.add('loginDice', () => {
 });
 
 
-
-
-
-
-
-
-
-
-
 const path = require('path');
-let appliedCount = 0;
-let alreadyAppliedCount = 0;
-let noLongerAvailableCount = 0;
-let failedCount = 0;
+let accumulatedCounts = {
+  applied: 0,
+  alreadyApplied: 0,
+  noLongerAvailable: 0,
+  failed: 0,
+  skipped: 0
+};
 
 Cypress.Commands.add('applyForJob', ({ jobId, timestamp }) => {
   cy.visit(`https://www.dice.com/job-detail/${jobId}`, { failOnStatusCode: false, timeout: 35000 })
-    .then(() => {
-      cy.get('body').then($body => {
-        if ($body.text().includes('Sorry this job is no longer available.')) {
-          noLongerAvailableCount++;
-          cy.task('logApplicationInfo', `${timestamp} - Sorry, this job is no longer available for job ID: ${jobId}`);
-          return cy.task('writeCSV', {
-            filePath: 'cypress/fixtures/applied/job_applications.csv',
-            data: { jobId, timestamp, status: 'no longer available' },
-            headers: ['jobId', 'timestamp', 'status'],
-            append: true
-          });
-        } else {
-          cy.wait(20000);
-          cy.get('.hydrated', { timeout: 15000 }).shadow().find('p').then($p => {
-            const buttonText = $p.text().trim();
-            if (buttonText.includes('Application Submitted')) {
-              alreadyAppliedCount++;
-              cy.task('logApplicationInfo', `${timestamp} - Application already submitted for job ID: ${jobId}`);
-              cy.task('writeCSV', {
-                filePath: 'cypress/fixtures/applied/job_applications.csv',
-                data: { jobId, timestamp, status: 'already applied' },
-                headers: ['jobId', 'timestamp', 'status'],
-                append: true
-              });
-            } else {
-              cy.wait(15000);
-              cy.get('.hydrated').shadow().find('button').then($button => {
-                const buttonText = $button.text().trim();
-                if (buttonText.includes('Easy apply')) {
-                  cy.task('logApplicationInfo', `${timestamp} - Easy apply button found for job ID: ${jobId}`);
-                  cy.get('#applyButton > .hydrated').click({ timeout: 5000 });
-                  cy.contains('span[data-v-5a80815f]', 'Next', { timeout: 3000 }).click();
-                  
-                  cy.get('span[data-v-5a80815f]', { timeout: 5000 }).then($submitButton => {
-                    if ($submitButton.text().trim().includes('Submit')) {
-                      cy.wrap($submitButton).click();
-                      appliedCount++;
-                      cy.task('logApplicationInfo', `${timestamp} - Job with ID ${jobId} applied successfully.`);
-                      return cy.task('writeCSV', {
-                        filePath: 'cypress/fixtures/applied/job_applications.csv',
-                        data: { jobId, timestamp, status: 'applied' },
-                        headers: ['jobId', 'timestamp', 'status'],
-                        append: true
-                      });
-                    } else {
-                      failedCount++;
-                      cy.task('logApplicationInfo', `${timestamp} - Submit button not found for job ID: ${jobId}. Skipping to next job.`);
-                      cy.task('writeCSV', {
-                        filePath: 'cypress/fixtures/applied/job_applications.csv',
-                        data: { jobId, timestamp, status: 'skipped' },
-                        headers: ['jobId', 'timestamp', 'status'],
-                        append: true
-                      });
-                    }
+      .then(() => {
+          cy.get('body').then($body => {
+              if ($body.text().includes('Sorry this job is no longer available.')) {
+                  accumulatedCounts.noLongerAvailable++;
+                  cy.task('logApplicationInfo', `${timestamp} - Sorry, this job is no longer available for job ID: ${jobId}`);
+                  return cy.task('writeCSV', {
+                      filePath: 'cypress/fixtures/applied/job_applications.csv',
+                      data: { jobId, timestamp, status: 'no longer available' },
+                      headers: ['jobId', 'timestamp', 'status'],
+                      append: true
                   });
-                } else {
-                  failedCount++;
-                  const errorMessage = `${timestamp} - Unexpected button text found: "${buttonText}" for job ID: ${jobId}`;
-                  cy.task('logApplicationError', errorMessage);
-                  cy.task('writeCSV', {
-                    filePath: 'cypress/fixtures/applied/job_applications.csv',
-                    data: { jobId, timestamp, status: 'fail' },
-                    headers: ['jobId', 'timestamp', 'status'],
-                    append: true
+              } else {
+                  cy.wait(20000);
+                  cy.get('.hydrated', { timeout: 15000 }).shadow().find('p').then($p => {
+                      const buttonText = $p.text().trim();
+                      if (buttonText.includes('Application Submitted')) {
+                          accumulatedCounts.alreadyApplied++;
+                          cy.task('logApplicationInfo', `${timestamp} - Application already submitted for job ID: ${jobId}`);
+                          cy.task('writeCSV', {
+                              filePath: 'cypress/fixtures/applied/job_applications.csv',
+                              data: { jobId, timestamp, status: 'already applied' },
+                              headers: ['jobId', 'timestamp', 'status'],
+                              append: true
+                          });
+                      } else {
+                          cy.wait(15000);
+                          cy.get('.hydrated').shadow().find('button').then($button => {
+                              const buttonText = $button.text().trim();
+                              if (buttonText.includes('Easy apply')) {
+                                  cy.task('logApplicationInfo', `${timestamp} - Easy apply button found for job ID: ${jobId}`);
+                                  cy.get('#applyButton > .hydrated').click({ timeout: 5000 });
+                                  cy.contains('span[data-v-5a80815f]', 'Next', { timeout: 3000 }).click();
+                                  
+                                  cy.get('span[data-v-5a80815f]', { timeout: 5000 }).then($submitButton => {
+                                      if ($submitButton.text().trim().includes('Submit')) {
+                                          cy.wrap($submitButton).click();
+                                          accumulatedCounts.applied++;
+                                          cy.task('logApplicationInfo', `${timestamp} - Job with ID ${jobId} applied successfully.`);
+                                          return cy.task('writeCSV', {
+                                              filePath: 'cypress/fixtures/applied/job_applications.csv',
+                                              data: { jobId, timestamp, status: 'applied' },
+                                              headers: ['jobId', 'timestamp', 'status'],
+                                              append: true
+                                          });
+                                      } else {
+                                          accumulatedCounts.skipped++; // Increment skipped count
+                                          cy.task('logApplicationInfo', `${timestamp} - Submit button not found for job ID: ${jobId}. Skipping to next job.`);
+                                          cy.task('writeCSV', {
+                                              filePath: 'cypress/fixtures/applied/job_applications.csv',
+                                              data: { jobId, timestamp, status: 'skipped' },
+                                              headers: ['jobId', 'timestamp', 'status'],
+                                              append: true
+                                          });
+                                      }
+                                  });
+                              } else {
+                                  accumulatedCounts.failed++;
+                                  const errorMessage = `${timestamp} - Unexpected button text found: "${buttonText}" for job ID: ${jobId}`;
+                                  cy.task('logApplicationError', errorMessage);
+                                  cy.task('writeCSV', {
+                                      filePath: 'cypress/fixtures/applied/job_applications.csv',
+                                      data: { jobId, timestamp, status: 'fail' },
+                                      headers: ['jobId', 'timestamp', 'status'],
+                                      append: true
+                                  });
+                              }
+                          });
+                      }
                   });
-                }
-              });
-            }
+              }
           });
-        }
       });
-    });
 });
 
 // After all jobs are processed, write the counts to a file
 Cypress.Commands.add('writeAppliedCounts', () => {
-  // Use Cypress task to write the counts to a file
-  cy.task('writeAppliedCounts', {
-    applied: appliedCount,
-    alreadyApplied: alreadyAppliedCount,
-    noLongerAvailable: noLongerAvailableCount,
-    failed: failedCount
-  });
+  cy.task('writeAppliedCounts', accumulatedCounts);
 });
-

@@ -1,6 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
+
 let statusCounts = {
   applied: 0,
   alreadyApplied: 0,
@@ -8,6 +9,7 @@ let statusCounts = {
   fail: 0,
   skipped: 0
 };
+
 // Function to append a message to a file
 const appendToFile = (filePath, message) => {
   try {
@@ -29,7 +31,6 @@ function ensureDirectoryExistence(filePath) {
 
 function convertToCSV(data, headers) {
   const csvRows = [];
-
   data.forEach(row => {
     const values = headers.map(header => {
       const escaped = ('' + row[header]).replace(/"/g, '\\"'); // Escape double quotes
@@ -37,7 +38,6 @@ function convertToCSV(data, headers) {
     });
     csvRows.push(values.join(',')); // Add data row
   });
-
   return csvRows.join('\n'); // Combine all rows with newline characters
 }
 
@@ -68,13 +68,18 @@ function writeCSV(filePath, data, headers, append = true) {
     return false;
   }
 }
+
+const writeAppliedCounts = ({ applied, alreadyApplied, noLongerAvailable, failed, skipped }) => {
+  const counts = { applied, alreadyApplied, noLongerAvailable, failed, skipped }; // Include skipped
+  const filePath = path.resolve('appliedCount.json'); // Updated to JSON
+  fs.writeFileSync(filePath, JSON.stringify(counts, null, 2));
+  return null;
+};
+
 module.exports = (on, config) => {
   on('task', {
     ensureDirectoryExistence(filePath) {
-      const dirname = path.dirname(filePath);
-      if (!fs.existsSync(dirname)) {
-        fs.mkdirSync(dirname, { recursive: true });
-      }
+      ensureDirectoryExistence(filePath);
       return null;
     },
     incrementStatusCount(status) {
@@ -86,19 +91,9 @@ module.exports = (on, config) => {
     getStatusCounts() {
       return statusCounts;
     },
-    writeAppliedCounts({ applied, alreadyApplied, noLongerAvailable, failed }) {
-      const counts = {
-        applied,
-        alreadyApplied,
-        noLongerAvailable,
-        failed
-      };
-
-      const filePath = path.resolve('appliedCount.txt');
-      fs.writeFileSync(filePath, JSON.stringify(counts, null, 2));
-      return null;
+    writeAppliedCounts(counts) {
+      return writeAppliedCounts(counts);
     },
-  
     listFilesInDir(dir) {
       return new Promise((resolve, reject) => {
         fs.readdir(dir, (err, files) => {
@@ -110,18 +105,20 @@ module.exports = (on, config) => {
       });
     },
     readJsonFile(filePath) {
-      if (!filePath) {
-        console.error('Invalid file path provided:', filePath);
-        return null;
-      }
       try {
-        const fileContent = fs.readFileSync(filePath, 'utf8');
-        return JSON.parse(fileContent);
-      } catch (err) {
-        console.error('Error reading JSON file:', err.message);
-        return null;
+          const absolutePath = path.resolve(filePath);
+          if (fs.existsSync(absolutePath)) {
+              const data = fs.readFileSync(absolutePath, 'utf8');
+              const parsedData = JSON.parse(data);
+              return parsedData; // Ensure the JSON structure matches what you expect
+          } else {
+              throw new Error(`File not found: ${absolutePath}`);
+          }
+      } catch (error) {
+          console.error(`Error reading JSON file: ${error.message}`);
+          return null; // Return null in case of an error
       }
-    },
+  },
     writeJsonFile({ filePath, data }) {
       try {
         const jsonData = JSON.stringify(data, null, 2);
@@ -136,7 +133,6 @@ module.exports = (on, config) => {
     getHomeDir() {
       return os.homedir();
     },
- 
     logApplicationInfo(message) {
       const logPath = path.join(__dirname, '..', 'applylogs', 'info.log');
       ensureDirectoryExistence(logPath);
@@ -164,9 +160,6 @@ module.exports = (on, config) => {
     writeCSV({ filePath, data, headers, append }) {
       return writeCSV(filePath, data, headers, append);
     },
-    getFilesFromDirectory(directory) {
-      return getFilesFromDirectory(directory);
-    },
     deleteFile(filePath) {
       return new Promise((resolve, reject) => {
         fs.unlink(filePath, (err) => {
@@ -180,9 +173,7 @@ module.exports = (on, config) => {
     exitProcess() {
       process.exit(0);
     }
-    
   });
 
   return config;
 };
-

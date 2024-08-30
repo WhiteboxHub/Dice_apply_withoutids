@@ -70,7 +70,7 @@ Cypress.Commands.add('applyForJob', ({ jobId, timestamp }) => {
                     });
                     cy.task('updateStatusSummary', 'noLonger');
                 } else {
-                    cy.wait(20000);
+                    cy.wait(15000);
                     cy.get('.hydrated', { timeout: 15000 }).shadow().find('p').then($p => {
                         const buttonText = $p.text().trim();
                         if (buttonText.includes('Application Submitted')) {
@@ -83,7 +83,7 @@ Cypress.Commands.add('applyForJob', ({ jobId, timestamp }) => {
                             });
                             cy.task('updateStatusSummary', 'alreadyApplied');
                         } else {
-                            cy.wait(15000);
+                            cy.wait(10000);
                             cy.get('.hydrated').shadow().find('button').then($button => {
                                 const buttonText = $button.text().trim();
                                 if (buttonText.includes('Easy apply')) {

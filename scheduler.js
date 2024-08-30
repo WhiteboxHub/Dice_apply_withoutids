@@ -41,50 +41,66 @@ const runCypress = (file) => {
         });
 
         // Listen for the 'exit' event to resolve the promise
-        cypressProcess.on('exit', resolve);
+        cypressProcess.on('exit', () => resolve());
     });
 };
 
 // Function to send an email report
 const sendReportEmail = (reportFilePath) => {
     return new Promise((resolve, reject) => {
-        const transporter = nodemailer.createTransport({
-            service: 'gmail',
-            auth: {
-                user: process.env.EMAIL_USER,
-                pass: process.env.EMAIL_PASS
-            },
-            tls: {
-                rejectUnauthorized: false // Bypass SSL validation for testing
+        // Read the file contents
+        fs.readFile(reportFilePath, 'utf8', (err, data) => {
+            if (err) {
+                console.error(`Error reading file: ${err.message}`);
+                return reject(err);
             }
-        });
 
-        const mailOptions = {
-            from: process.env.EMAIL_USER,
-            to: process.env.RECIPIENT_EMAIL, // Ensure this is set correctly
-            subject: 'Cypress Test Report',
-            text: `Cypress test run completed. Report: ${reportFilePath}`,
-            attachments: [
-                {
-                    filename: 'status_summary.json',
-                    path: reportFilePath
+            const transporter = nodemailer.createTransport({
+                service: 'gmail',
+                auth: {
+                    user: process.env.EMAIL_USER,
+                    pass: process.env.EMAIL_PASS
+                },
+                tls: {
+                    rejectUnauthorized: false // Bypass SSL validation for testing
                 }
-            ]
-        };
+            });
 
-        transporter.sendMail(mailOptions, (error, info) => {
-            if (error) {
-                console.error(`Error sending email: ${error.message}`);
-                return reject(error);
+            const mailOptions = {
+                from: process.env.EMAIL_USER,
+                to: process.env.EMAIL_TO,
+                subject: 'Cypress Test Report',
+                text: `Cypress test run completed for ${process.env.YOU_USERNAME}. Here is the report data:\n\n${data}`
+            };
+
+            transporter.sendMail(mailOptions, (error, info) => {
+                if (error) {
+                    console.error(`Error sending email: ${error.message}`);
+                    return reject(error);
+                }
+                console.log('Email sent: ' + info.response);
+                resolve();
+            });
+        });
+    });
+};
+
+// Function to delete a file
+const deleteFile = (filePath) => {
+    return new Promise((resolve, reject) => {
+        fs.unlink(filePath, (err) => {
+            if (err) {
+                console.error(`Error deleting file: ${err.message}`);
+                return reject(err);
             }
-            console.log('Email sent: ' + info.response);
+            console.log(`File deleted: ${filePath}`);
             resolve();
         });
     });
 };
 
 // Schedule tasks using cron
-cron.schedule('05 19 * * 1-5', async () => {
+cron.schedule('35 12 * * 1-5', async () => {
     try {
         const files = await getFiles();
         for (const file of files) {
@@ -97,6 +113,8 @@ cron.schedule('05 19 * * 1-5', async () => {
         const summaryFilePath = path.join('cypress', 'fixtures', 'applied', 'status_summary.json');
         if (fs.existsSync(summaryFilePath)) {
             await sendReportEmail(summaryFilePath);
+            // Delete the status_summary.json file after sending the email
+            await deleteFile(summaryFilePath);
         } else {
             console.warn(`Summary file not found: ${summaryFilePath}`);
         }

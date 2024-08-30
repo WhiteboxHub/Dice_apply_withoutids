@@ -76,7 +76,7 @@ const updateStatusSummary = (status) => {
     summary[status] += 1;
     fs.writeFileSync(summaryFilePath, JSON.stringify(summary, null, 2));
   } else {
-    console.error(`Invalid status: ${status}`);
+   // console.error(`Invalid status: ${status}`);
   }
 };
 

@@ -1,40 +1,43 @@
-// If you are using format from 'date-fns', make sure to use it
+// Import necessary libraries
 import { format } from 'date-fns';
 
 describe('Apply for Jobs', () => {
     let jobIds = [];
-    let accumulatedCounts = { // Define here to be used in after hook
+    let accumulatedCounts = { 
         applied: 0,
         alreadyApplied: 0,
         noLongerAvailable: 0,
         failed: 0,
         skipped: 0
     };
+
     before(() => {
-        // Ensure session management is correctly set up
+        // Login session
         cy.session('login', () => {
-            cy.loginDice(); // Custom command to login
+            cy.loginDice();
         });
 
-        // Read the file specified in the environment variable
+        // Load job IDs from the specified JSON file
         const filePath = Cypress.env('file');
         cy.task('readJsonFile', filePath).then((data) => {
-            jobIds = data.ids; // Assuming JSON structure { "ids": [...] }
+            jobIds = data.ids; 
         });
     });
 
     it('Applies for jobs using Easy Apply for each job ID in the file', () => {
         cy.wrap(jobIds).each((currentJobId) => {
-            const timestamp = new Date().toISOString().replace(/T/, ' ').replace(/\..+/, '');
+            const timestamp = format(new Date(), 'yyyy-MM-dd HH:mm:ss');
             cy.applyForJob({ jobId: currentJobId, timestamp }).then((status) => {
                 accumulatedCounts[status]++;
             });
         }).then(() => {
-            cy.reload();
+            cy.reload(); 
         });
     });
 
     after(() => {
-        cy.writeAppliedCounts(); // Ensure this task is properly defined
+        // Save the accumulated counts to a file
+        cy.task('writeJsonFile', { filePath: 'appliedCounts.json', data: accumulatedCounts });
+        cy.writeAppliedCounts(); 
     });
 });

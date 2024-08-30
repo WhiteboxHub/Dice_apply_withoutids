@@ -2,13 +2,8 @@ const fs = require('fs');
 const path = require('path');
 const os = require('os');
 
-let statusCounts = {
-  applied: 0,
-  alreadyApplied: 0,
-  noLongerAvailable: 0,
-  fail: 0,
-  skipped: 0
-};
+// Path to the summary file
+const summaryFilePath = path.join('cypress', 'fixtures', 'applied', 'status_summary.json');
 
 // Function to append a message to a file
 const appendToFile = (filePath, message) => {
@@ -22,14 +17,15 @@ const appendToFile = (filePath, message) => {
 };
 
 // Function to ensure the directory exists
-function ensureDirectoryExistence(filePath) {
+const ensureDirectoryExistence = (filePath) => {
   const dirname = path.dirname(filePath);
   if (!fs.existsSync(dirname)) {
     fs.mkdirSync(dirname, { recursive: true });
   }
-}
+};
 
-function convertToCSV(data, headers) {
+// Convert data to CSV format
+const convertToCSV = (data, headers) => {
   const csvRows = [];
   data.forEach(row => {
     const values = headers.map(header => {
@@ -39,10 +35,10 @@ function convertToCSV(data, headers) {
     csvRows.push(values.join(',')); // Add data row
   });
   return csvRows.join('\n'); // Combine all rows with newline characters
-}
+};
 
 // Function to write CSV file
-function writeCSV(filePath, data, headers, append = true) {
+const writeCSV = (filePath, data, headers, append = true) => {
   try {
     // Ensure data is always an array
     const dataArray = Array.isArray(data) ? data : [data];
@@ -67,33 +63,33 @@ function writeCSV(filePath, data, headers, append = true) {
     console.error('Error writing CSV file', err);
     return false;
   }
-}
-
-const writeAppliedCounts = ({ applied, alreadyApplied, noLongerAvailable, failed, skipped }) => {
-  const counts = { applied, alreadyApplied, noLongerAvailable, failed, skipped }; // Include skipped
-  const filePath = path.resolve('appliedCount.json'); // Updated to JSON
-  fs.writeFileSync(filePath, JSON.stringify(counts, null, 2));
-  return null;
 };
 
+// Initialize or update the status summary file
+const updateStatusSummary = (status) => {
+  if (!fs.existsSync(summaryFilePath)) {
+    fs.writeFileSync(summaryFilePath, JSON.stringify({ applied: 0, noLonger: 0, alreadyApplied: 0, fail: 0, skipped: 0 }, null, 2));
+  }
+
+  const summary = JSON.parse(fs.readFileSync(summaryFilePath, 'utf8'));
+  if (summary.hasOwnProperty(status)) {
+    summary[status] += 1;
+    fs.writeFileSync(summaryFilePath, JSON.stringify(summary, null, 2));
+  } else {
+    console.error(`Invalid status: ${status}`);
+  }
+};
+
+// Export Cypress plugin functions
 module.exports = (on, config) => {
   on('task', {
+    // Ensure directory existence
     ensureDirectoryExistence(filePath) {
       ensureDirectoryExistence(filePath);
       return null;
     },
-    incrementStatusCount(status) {
-      if (statusCounts.hasOwnProperty(status)) {
-        statusCounts[status]++;
-      }
-      return null;
-    },
-    getStatusCounts() {
-      return statusCounts;
-    },
-    writeAppliedCounts(counts) {
-      return writeAppliedCounts(counts);
-    },
+
+    // List files in directory
     listFilesInDir(dir) {
       return new Promise((resolve, reject) => {
         fs.readdir(dir, (err, files) => {
@@ -104,21 +100,25 @@ module.exports = (on, config) => {
         });
       });
     },
+
+    // Read JSON file
     readJsonFile(filePath) {
       try {
-          const absolutePath = path.resolve(filePath);
-          if (fs.existsSync(absolutePath)) {
-              const data = fs.readFileSync(absolutePath, 'utf8');
-              const parsedData = JSON.parse(data);
-              return parsedData; // Ensure the JSON structure matches what you expect
-          } else {
-              throw new Error(`File not found: ${absolutePath}`);
-          }
+        const absolutePath = path.resolve(filePath);
+        if (fs.existsSync(absolutePath)) {
+          const data = fs.readFileSync(absolutePath, 'utf8');
+          const parsedData = JSON.parse(data);
+          return parsedData; // Ensure the JSON structure matches what you expect
+        } else {
+          throw new Error(`File not found: ${absolutePath}`);
+        }
       } catch (error) {
-          console.error(`Error reading JSON file: ${error.message}`);
-          return null; // Return null in case of an error
+        console.error(`Error reading JSON file: ${error.message}`);
+        return null; // Return null in case of an error
       }
-  },
+    },
+
+    // Write JSON file
     writeJsonFile({ filePath, data }) {
       try {
         const jsonData = JSON.stringify(data, null, 2);
@@ -130,36 +130,50 @@ module.exports = (on, config) => {
         return err.message;
       }
     },
+
+    // Get home directory path
     getHomeDir() {
       return os.homedir();
     },
+
+    // Log application info
     logApplicationInfo(message) {
       const logPath = path.join(__dirname, '..', 'applylogs', 'info.log');
       ensureDirectoryExistence(logPath);
       appendToFile(logPath, message);
       return null;
     },
+
+    // Log application errors
     logApplicationError(message) {
       const logPath = path.join(__dirname, '..', 'applylogs', 'error.log');
       ensureDirectoryExistence(logPath);
       appendToFile(logPath, message);
       return null;
     },
+
+    // Log general info
     logInfo(message) {
       const logPath = path.join(__dirname, '..', 'cypress', 'logs', 'info.log');
       ensureDirectoryExistence(logPath);
       appendToFile(logPath, message);
       return null;
     },
+
+    // Log general errors
     logError(message) {
       const logPath = path.join(__dirname, '..', 'cypress', 'logs', 'error.log');
       ensureDirectoryExistence(logPath);
       appendToFile(logPath, message);
       return null;
     },
+
+    // Write CSV file
     writeCSV({ filePath, data, headers, append }) {
       return writeCSV(filePath, data, headers, append);
     },
+
+    // Delete file
     deleteFile(filePath) {
       return new Promise((resolve, reject) => {
         fs.unlink(filePath, (err) => {
@@ -170,8 +184,16 @@ module.exports = (on, config) => {
         });
       });
     },
+
+    // Exit process
     exitProcess() {
       process.exit(0);
+    },
+
+    // Update status summary
+    updateStatusSummary(status) {
+      updateStatusSummary(status);
+      return null;
     }
   });
 

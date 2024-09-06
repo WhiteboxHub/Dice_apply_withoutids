@@ -32,75 +32,58 @@ const runCypress = (file) => {
 
         const cypressProcess = exec(command, (err, stdout, stderr) => {
             if (err) {
-                console.error(`Error executing Cypress: ${err}`);
-                console.error(stderr); // Log stderr for more details
-                return reject(err);
+             //   console.error(`Error executing Cypress: ${err}`);
+              //  console.error(stderr); // Log stderr for more details
+              //  return reject(err);
             }
             console.log(stdout); // Log stdout for Cypress output
             resolve();
         });
 
         // Listen for the 'exit' event to resolve the promise
-        cypressProcess.on('exit', () => resolve());
+        cypressProcess.on('exit', resolve);
     });
 };
 
 // Function to send an email report
-const sendReportEmail = (reportFilePath) => {
+const sendReportEmail = (reportData) => {
     return new Promise((resolve, reject) => {
-        // Read the file contents
-        fs.readFile(reportFilePath, 'utf8', (err, data) => {
-            if (err) {
-                console.error(`Error reading file: ${err.message}`);
-                return reject(err);
+        const transporter = nodemailer.createTransport({
+            service: 'gmail',
+            auth: {
+                user: process.env.EMAIL_USER,
+                pass: process.env.EMAIL_PASS
+            },
+            tls: {
+                rejectUnauthorized: false // Bypass SSL validation for testing
             }
-
-            const transporter = nodemailer.createTransport({
-                service: 'gmail',
-                auth: {
-                    user: process.env.EMAIL_USER,
-                    pass: process.env.EMAIL_PASS
-                },
-                tls: {
-                    rejectUnauthorized: false // Bypass SSL validation for testing
-                }
-            });
-
-            const mailOptions = {
-                from: process.env.EMAIL_USER,
-                to: process.env.EMAIL_TO,
-                subject: 'Cypress Test Report',
-                text: `Cypress test run completed for ${process.env.YOU_USERNAME}. Here is the report data:\n\n${data}`
-            };
-
-            transporter.sendMail(mailOptions, (error, info) => {
-                if (error) {
-                    console.error(`Error sending email: ${error.message}`);
-                    return reject(error);
-                }
-                console.log('Email sent: ' + info.response);
-                resolve();
-            });
         });
-    });
-};
 
-// Function to delete a file
-const deleteFile = (filePath) => {
-    return new Promise((resolve, reject) => {
-        fs.unlink(filePath, (err) => {
-            if (err) {
-                console.error(`Error deleting file: ${err.message}`);
-                return reject(err);
+        const mailOptions = {
+            from: process.env.EMAIL_USER,
+            to: process.env.EMAIL_TO, // Ensure this is set correctly
+            subject: 'Cypress Test Report',
+            text: `Cypress test run completed for ${process.env.YOU_USERNAME}. Here is the summary:\n\n` +
+                `Applied: ${reportData.applied}\n` +
+                `No Longer Available: ${reportData.noLonger}\n` +
+                `Already Applied: ${reportData.alreadyApplied}\n` +
+                `Failed: ${reportData.fail}\n` +
+                `Skipped: ${reportData.skipped}\n`
+        };
+
+        transporter.sendMail(mailOptions, (error, info) => {
+            if (error) {
+                console.error(`Error sending email: ${error.message}`);
+                return reject(error);
             }
-            console.log(`File deleted: ${filePath}`);
+            console.log('Email sent: ' + info.response);
             resolve();
         });
     });
 };
 
 // Schedule tasks using cron
-cron.schedule('35 12 * * 1-5', async () => {
+cron.schedule('07 10 * * *', async () => {
     try {
         const files = await getFiles();
         for (const file of files) {
@@ -109,12 +92,15 @@ cron.schedule('35 12 * * 1-5', async () => {
             }
         }
 
-        // Send email report with the status summary
+        // Read the status summary JSON file
         const summaryFilePath = path.join('cypress', 'fixtures', 'applied', 'status_summary.json');
         if (fs.existsSync(summaryFilePath)) {
-            await sendReportEmail(summaryFilePath);
-            // Delete the status_summary.json file after sending the email
-            await deleteFile(summaryFilePath);
+            const summaryData = JSON.parse(fs.readFileSync(summaryFilePath, 'utf8'));
+            await sendReportEmail(summaryData);
+
+            // Delete the summary file after sending the email
+            fs.unlinkSync(summaryFilePath);
+            console.log(`Deleted summary file: ${summaryFilePath}`);
         } else {
             console.warn(`Summary file not found: ${summaryFilePath}`);
         }

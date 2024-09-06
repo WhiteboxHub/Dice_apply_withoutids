@@ -9,7 +9,7 @@ module.exports = defineConfig({
     baseUrl: "https://www.dice.com/",
     includeShadowDom: true,
     experimentalMemoryManagement: true,
-    numTestsKeptInMemory: 1,
+    numTestsKeptInMemory: 0,
     pageLoadTimeout: parseInt(process.env.PAGE_LOAD_TIMEOUT) || 100000,
     defaultCommandTimeout: parseInt(process.env.DEFAULT_COMMAND_TIMEOUT) || 10000,
     chromeWebSecurity: false,

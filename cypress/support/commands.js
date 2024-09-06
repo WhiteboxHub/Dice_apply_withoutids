@@ -59,6 +59,7 @@ const path = require('path');
 Cypress.Commands.add('applyForJob', ({ jobId, timestamp }) => {
     cy.visit(`https://www.dice.com/job-detail/${jobId}`, { failOnStatusCode: false, timeout: 35000 })
         .then(() => {
+            cy.wait(5000)
             cy.get('body').then($body => {
                 if ($body.text().includes('Sorry this job is no longer available.')) {
                     cy.task('logApplicationInfo', `${timestamp} - Sorry, this job is no longer available for job ID: ${jobId}`);
@@ -70,7 +71,7 @@ Cypress.Commands.add('applyForJob', ({ jobId, timestamp }) => {
                     });
                     cy.task('updateStatusSummary', 'noLonger');
                 } else {
-                    cy.wait(15000);
+                    cy.wait(10000);
                     cy.get('.hydrated', { timeout: 15000 }).shadow().find('p').then($p => {
                         const buttonText = $p.text().trim();
                         if (buttonText.includes('Application Submitted')) {
@@ -94,6 +95,7 @@ Cypress.Commands.add('applyForJob', ({ jobId, timestamp }) => {
                                     cy.get('span[data-v-5a80815f]', { timeout: 5000 }).then($submitButton => {
                                         if ($submitButton.text().trim().includes('Submit')) {
                                             cy.wrap($submitButton).click();
+                                            cy.wait(5000);
                                             cy.task('logApplicationInfo', `${timestamp} - Job with ID ${jobId} applied successfully.`);
                                             cy.task('writeCSV', {
                                                 filePath: 'cypress/fixtures/applied/job_applications.csv',

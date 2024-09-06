@@ -35,9 +35,9 @@ describe('Apply for Jobs', () => {
         });
     });
 
-    after(() => {
-        // Save the accumulated counts to a file
-        cy.task('writeJsonFile', { filePath: 'appliedCounts.json', data: accumulatedCounts });
-        cy.writeAppliedCounts(); 
-    });
+    // after(() => {
+    //     // Save the accumulated counts to a file
+    //    // cy.task('writeJsonFile', { filePath: 'appliedCounts.json', data: accumulatedCounts });
+    //    // cy.writeAppliedCounts(); 
+    // });
 });

@@ -16,24 +16,19 @@ module.exports = defineConfig({
 
     env: {
       categories: process.env.CATEGORIES,
+      credentials_ML_user_username: process.env.CREDENTIALS_ML_USER_USERNAME,
+      credentials_ML_user_password: process.env.CREDENTIALS_ML_USER_PASSWORD,
+      credentials_ML_user_apply: process.env.CREDENTIALS_ML_USER_APPLY,
 
-      credentials: {
-        "you": {
-          username: process.env.YOU_USERNAME,
-          password: process.env.YOU_PASSWORD,
-          apply: process.env.YOU_APPLY
-        },
-        "ha": {
-          username: process.env.HA_USERNAME,
-          password: process.env.HA_PASSWORD,
-          apply: process.env.HA_APPLY
-        },
-        "dee": {
-          username: process.env.DEE_USERNAME,
-          password: process.env.DEE_PASSWORD,
-          apply: process.env.DEE_APPLY
-        }
-      },
+      credentials_QA_user_username: process.env.CREDENTIALS_QA_USER_USERNAME,
+      credentials_QA_user_password: process.env.CREDENTIALS_QA_USER_PASSWORD,
+      credentials_QA_user_apply: process.env.CREDENTIALS_QA_USER_APPLY,
+
+      credentials_UI_user_username: process.env.CREDENTIALS_UI_USER_USERNAME,
+      credentials_UI_user_password: process.env.CREDENTIALS_UI_USER_PASSWORD,
+      credentials_UI_user_apply: process.env.CREDENTIALS_UI_USER_APPLY,
+     
+      
       defaultUserKey: process.env.DEFAULT_USER_KEY
     },
 

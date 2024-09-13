@@ -11,10 +11,13 @@ describe('Apply for Jobs', () => {
         skipped: 0
     };
 
+ 
+    const category = Cypress.env('CATEGORY'); // Fetch category from environment
+
     before(() => {
-        // Login session
+        // Use the session for login, passing the category to loginDice
         cy.session('login', () => {
-            cy.loginDice();
+            cy.loginDice(category);
         });
 
         // Load job IDs from the specified JSON file

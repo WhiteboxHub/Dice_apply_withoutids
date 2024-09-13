@@ -184,6 +184,20 @@ module.exports = (on, config) => {
         });
       });
     },
+    logInCategory(category) {
+      return new Promise((resolve, reject) => {
+        // Execute the Cypress command with category-specific credentials
+        exec(`npx cypress run --env category=${category}`, (err, stdout, stderr) => {
+          if (err) {
+           // console.error(`Error executing Cypress: ${err}`);
+           console.error(stderr);
+         //   return reject(err);
+          }
+          console.log(stdout);
+          resolve();
+        });
+      });
+    },
 
     // Exit process
     exitProcess() {

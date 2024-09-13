@@ -8,13 +8,13 @@ require('dotenv').config(); // Load environment variables from .env file
 
 // Define paths and variables
 const homeDir = os.homedir();
-const category = process.env.CATEGORIES || 'default-category';
-const qaDirPath = path.join(homeDir, 'Desktop', 'jobs_to_apply', category);
+const categories = process.env.CATEGORIES ? process.env.CATEGORIES.split(' ') : ['default-category'];
 
-// Function to get the list of files
-const getFiles = () => {
+// Function to get the list of files for a given category
+const getFiles = (category) => {
+    const categoryDirPath = path.join(homeDir, 'Desktop', 'jobs_to_apply', category);
     return new Promise((resolve, reject) => {
-        fs.readdir(qaDirPath, (err, files) => {
+        fs.readdir(categoryDirPath, (err, files) => {
             if (err) {
                 return reject(err);
             }
@@ -24,17 +24,17 @@ const getFiles = () => {
 };
 
 // Function to run Cypress tests
-const runCypress = (file) => {
+const runCypress = (category, file) => {
     return new Promise((resolve, reject) => {
-        const filePath = path.join(qaDirPath, file);
-        const command = `npx cypress run --env file="${filePath}"`;
+        const filePath = path.join(homeDir, 'Desktop', 'jobs_to_apply', category, file);
+        const command = `npx cypress run --env file="${filePath}",CATEGORY="${category}"`;
         console.log(`Executing command: ${command}`);
 
         const cypressProcess = exec(command, (err, stdout, stderr) => {
             if (err) {
-             //   console.error(`Error executing Cypress: ${err}`);
-              //  console.error(stderr); // Log stderr for more details
-              //  return reject(err);
+              //  console.error(`Error executing Cypress: ${err}`);
+               // console.error(stderr); // Log stderr for more details
+               // return reject(err);
             }
             console.log(stdout); // Log stdout for Cypress output
             resolve();
@@ -44,6 +44,7 @@ const runCypress = (file) => {
         cypressProcess.on('exit', resolve);
     });
 };
+
 
 // Function to send an email report
 const sendReportEmail = (reportData) => {
@@ -83,12 +84,15 @@ const sendReportEmail = (reportData) => {
 };
 
 // Schedule tasks using cron
-cron.schedule('07 10 * * *', async () => {
+cron.schedule('44 11 * * *', async () => {
     try {
-        const files = await getFiles();
-        for (const file of files) {
-            if (file.endsWith('.json')) {
-                await runCypress(file);
+        for (const category of categories) {
+            const files = await getFiles(category);
+            for (const file of files) {
+                if (file.endsWith('.json')) {
+                    // Pass category as an environment variable
+                    await runCypress(category, file);
+                }
             }
         }
 

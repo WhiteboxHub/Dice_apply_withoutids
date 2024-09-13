@@ -22,37 +22,61 @@
 //
 //
 // -- This will overwrite an existing command --
-// Cypress.Commands.overwrite('visit', (originalFn, url, options) => { ... })
-Cypress.Commands.add('loginDice', () => {
-  // Access credentials from Cypress environment
-  const credentials = Cypress.env('credentials');
-  const userKey = Cypress.env('defaultUserKey');
-  const user = credentials[userKey];
+require('dotenv').config();
+// Helper function to get credentials based on role
+function getCredentials(role) {
+    switch (role) {
+        case 'ML':
+            return {
+                username: Cypress.env('credentials_ML_user_username'),
+                password: Cypress.env('credentials_ML_user_password'),
+                apply: Cypress.env('credentials_ML_user_apply'),
+            };
+        case 'QA':
+            return {
+                username: Cypress.env('credentials_QA_user_username'),
+                password: Cypress.env('credentials_QA_user_password'),
+                apply: Cypress.env('credentials_QA_user_apply'),
+            };
+        case 'UI':
+            return {
+                username: Cypress.env('credentials_UI_user_username'),
+                password: Cypress.env('credentials_UI_user_password'),
+                apply: Cypress.env('credentials_UI_user_apply'),
+            };
+        default:
+            throw new Error('Invalid role specified. Use "ML", "QA", or "UI".');
+    }
+}
 
-  if (!user) {
-    throw new Error(`No credentials found for user key: ${userKey}`);
-  }
+// Cypress custom command to log in to Dice
+Cypress.Commands.add('loginDice', (role) => {
+    const credentials = getCredentials(role);
 
-  const { username, password, apply } = user;
+     console.log(credentials);
 
-  if (apply !== 's') {
-    // If apply is not 's', skip the application process
-    cy.log(`Skipping application for ${userKey}`);
-    return;
-  }
-
-  // Increase pageLoadTimeout for this specific visit
-  cy.visit('https://www.dice.com/dashboard/login');
-
-  // Type username and password, then click submit button
-  cy.get('input[placeholder="Please enter your email"][type="email"][name="email"]').type(username);
-  cy.get('button[data-testid="sign-in-button"]').click().wait(2000);
-  cy.get('input[placeholder="Enter Password"]').type(password);
-  cy.get('button[data-testid="submit-password"]').click();
-  cy.wait(5000);
-
-  // Optionally, add assertions or further actions after login
+    if (credentials.apply !== 's') {
+        cy.log(`Skipping application for role: ${role}`);
+        return;
+    }
+  
+    // Visit the login page and perform login
+    cy.visit('https://www.dice.com/dashboard/login');
+  
+    // Fill in email and password
+    cy.get('input[placeholder="Please enter your email"][type="email"][name="email"]')
+      .type(credentials.username);
+    cy.get('button[data-testid="sign-in-button"]').click().wait(2000);
+  
+    cy.get('input[placeholder="Enter Password"]').type(credentials.password);
+    cy.get('button[data-testid="submit-password"]').click();
+  
+    // Wait for login and perform any other actions
+    cy.wait(5000);
 });
+
+  
+  
 
 
 const path = require('path');
@@ -95,7 +119,7 @@ Cypress.Commands.add('applyForJob', ({ jobId, timestamp }) => {
                                     cy.get('span[data-v-5a80815f]', { timeout: 5000 }).then($submitButton => {
                                         if ($submitButton.text().trim().includes('Submit')) {
                                             cy.wrap($submitButton).click();
-                                            cy.wait(5000);
+                                            cy.wait(3000);
                                             cy.task('logApplicationInfo', `${timestamp} - Job with ID ${jobId} applied successfully.`);
                                             cy.task('writeCSV', {
                                                 filePath: 'cypress/fixtures/applied/job_applications.csv',

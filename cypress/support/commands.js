@@ -77,13 +77,41 @@ Cypress.Commands.add('loginDice', (role) => {
 
   
   
-
-
+Cypress.Commands.add('checkAndClickDismissButton', (iframeSelector, buttonSelector) => {
+    cy.get('body').then($body => {
+      // Check if the iframe exists
+      if ($body.find(iframeSelector).length > 0) {
+        // If iframe is found, get its body and attempt to click the button
+        cy.getIframeBody(iframeSelector)
+          .find(buttonSelector)
+          .then($button => {
+            // Click the button if it exists
+            if ($button.length > 0) {
+              cy.wrap($button).click();
+              cy.log('Dismiss button clicked');
+            } else {
+              cy.log('Dismiss button not found inside iframe');
+            }
+          });
+      } else {
+        cy.log('Iframe not found');
+      }
+    });
+  });
+  
+  Cypress.Commands.add('getIframeBody', (iframeSelector) => {
+    cy.get(iframeSelector)
+      .its('0.contentDocument.body') // Get the iframe's document body
+      .should('be.visible') // Ensure it's visible
+      .then(cy.wrap); // Wrap the body so we can use Cypress commands on it
+  });
+  
 const path = require('path');
 Cypress.Commands.add('applyForJob', ({ jobId, timestamp }) => {
     cy.visit(`https://www.dice.com/job-detail/${jobId}`, { failOnStatusCode: false, timeout: 35000 })
         .then(() => {
-            cy.wait(5000)
+            cy.wait(5000);
+            cy.checkAndClickDismissButton('div.usabilla__overlay iframe', 'button.dismiss');
             cy.get('body').then($body => {
                 if ($body.text().includes('Sorry this job is no longer available.')) {
                     cy.task('logApplicationInfo', `${timestamp} - Sorry, this job is no longer available for job ID: ${jobId}`);
@@ -108,7 +136,7 @@ Cypress.Commands.add('applyForJob', ({ jobId, timestamp }) => {
                             });
                             cy.task('updateStatusSummary', 'alreadyApplied');
                         } else {
-                            cy.wait(10000);
+                            cy.wait(20000);
                             cy.get('.hydrated').shadow().find('button').then($button => {
                                 const buttonText = $button.text().trim();
                                 if (buttonText.includes('Easy apply')) {

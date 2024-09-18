@@ -110,7 +110,7 @@ const path = require('path');
 Cypress.Commands.add('applyForJob', ({ jobId, timestamp }) => {
     cy.visit(`https://www.dice.com/job-detail/${jobId}`, { failOnStatusCode: false, timeout: 35000 })
         .then(() => {
-            cy.wait(5000);
+            cy.wait(10000);
             cy.checkAndClickDismissButton('div.usabilla__overlay iframe', 'button.dismiss');
             cy.get('body').then($body => {
                 if ($body.text().includes('Sorry this job is no longer available.')) {

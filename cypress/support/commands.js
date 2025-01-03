@@ -142,7 +142,7 @@ Cypress.Commands.add('applyForJob', ({ jobId, timestamp }) => {
                                 if (buttonText.includes('Easy apply')) {
                                     cy.task('logApplicationInfo', `${timestamp} - Easy apply button found for job ID: ${jobId}`);
                                     cy.get('#applyButton > .hydrated').click({ timeout: 5000 });
-                                    cy.contains('span[data-v-866481c4]', 'Next', { timeout: 3000 }).click();
+                                    cy.get('span[data-v-866481c4]').contains('Next',{timeout:3000}).click();
                                     
                                     cy.get('span[data-v-866481c4]', { timeout: 5000 }).then($submitButton => {
                                         if ($submitButton.text().trim().includes('Submit')) {

@@ -63,7 +63,7 @@ const sendReportEmail = (reportData) => {
         const mailOptions = {
             from: process.env.EMAIL_USER,
             to: process.env.EMAIL_TO, // Ensure this is set correctly
-            subject: 'Cypress Test Report',
+            subject: 'Cypress Test Report from ',
             text: `Cypress test run completed for ${process.env.YOU_USERNAME}. Here is the summary:\n\n` +
                 `Applied: ${reportData.applied}\n` +
                 `No Longer Available: ${reportData.noLonger}\n` +

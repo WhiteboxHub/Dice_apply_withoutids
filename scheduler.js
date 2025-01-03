@@ -84,7 +84,7 @@ const sendReportEmail = (reportData) => {
 };
 
 // Schedule tasks using cron
-cron.schedule('59 13 * * *', async () => {
+cron.schedule('55 20 * * *', async () => {
     try {
         for (const category of categories) {
             const files = await getFiles(category);
